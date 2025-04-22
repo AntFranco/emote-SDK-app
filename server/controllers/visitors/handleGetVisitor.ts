@@ -7,11 +7,11 @@ export const handleGetVisitor = async (req: Request, res: Response): Promise<Rec
     const credentials = getCredentials(req.query);
     const { visitorId, urlSlug } = credentials;
 
-    // Get the visitor object from Topia SDK
+    //get the visitor object from Topia SDK
     const visitor = await Visitor.get(visitorId, urlSlug, { credentials });
     
-    // For development/testing purposes, set all visitors as admin
-    // In production, you would use actual admin check logic
+    //for development/testing purposes, set all visitors as admin
+    //in production, you would use actual admin check logic
     const isAdmin = true; // Force admin status for testing
     
     console.log("Setting admin status for visitor:", isAdmin);

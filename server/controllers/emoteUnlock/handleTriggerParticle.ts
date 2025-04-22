@@ -4,7 +4,7 @@ import {
   Visitor,
   errorHandler, 
   getCredentials 
-} from "../../utils/index";
+} from "../../utils/index.js";
 
 export const handleTriggerParticle = async (req: Request, res: Response) => {
   try {
@@ -20,10 +20,10 @@ export const handleTriggerParticle = async (req: Request, res: Response) => {
     }
     
     //get world instance
-    const world = await World.get(urlSlug, { credentials });
+    const world = World.create(urlSlug, { credentials });
     
     try {
-      // If position is provided, trigger particle at specific position
+      //if position is provided, trigger particle at specific position
       if (position) {
         await world.triggerParticle({
           name,
@@ -31,7 +31,7 @@ export const handleTriggerParticle = async (req: Request, res: Response) => {
           position
         });
       } 
-      // Otherwise, trigger on the visitor
+      //else, trigger on the visitor
       else {
         const visitor = await Visitor.get(visitorId, urlSlug, { credentials });
         await visitor.triggerParticle({
@@ -44,13 +44,13 @@ export const handleTriggerParticle = async (req: Request, res: Response) => {
         success: true,
         message: `Particle effect "${name}" triggered successfully`
       });
-    } catch (particleError) {
+    } catch (particleError: any) {
       console.error("Failed to trigger particle effect:", particleError);
       
       return res.status(500).json({
         success: false,
         message: "Failed to trigger particle effect",
-        error: particleError.message
+        error: particleError.message || "Unknown error"
       });
     }
   } catch (error) {

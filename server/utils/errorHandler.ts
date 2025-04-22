@@ -12,7 +12,7 @@ export const errorHandler = ({
   res?: any;
 }) => {
   try {
-    if (process.env.NODE_ENV === "development") console.error("❌ Error:", error);
+    if (process.env.NODE_ENV === "development") console.error("ERROR:", error);
 
     const reqQueryParams = req?.query;
     if (reqQueryParams?.interactiveNonce) delete reqQueryParams.interactiveNonce;
@@ -35,7 +35,7 @@ export const errorHandler = ({
     if (res) return res.status(error.status || 500).send({ error, message, success: false });
     return { error };
   } catch (e) {
-    console.error("❌ Error printing the logs", e);
+    console.error("ERROR printing the logs", e);   
     return res.status(500).send({ error: e, message, success: false });
   }
 };

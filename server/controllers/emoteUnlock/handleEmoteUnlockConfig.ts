@@ -1,67 +1,85 @@
 import { Request, Response } from "express";
 import { 
-  DroppedAsset, 
   errorHandler, 
   getCredentials, 
-  initializeDroppedAssetDataObject 
-} from "../../utils/index";
-import { IDroppedAsset } from "../../types/DroppedAssetInterface";
+  Visitor,
+  World
+} from "../../utils/index.js";
+
+interface EmoteUnlockConfig {
+  emoteId: string;
+  emoteName: string;
+  emoteDescription: string;
+  emotePreviewUrl: string;
+  password: string;
+  stats: {
+    attempts: number;
+    successfulUnlocks: number;
+    unlockUsers: Array<{
+      visitorId: string;
+      displayName: string;
+      unlockedAt: string;
+    }>;
+  };
+}
 
 export const handleEmoteUnlockConfig = async (req: Request, res: Response) => {
   try {
     const credentials = getCredentials(req.query);
-    const { assetId, urlSlug } = credentials;
-    const { emoteDescription, password } = req.body;
-    
-    // Basic validation
-    if (!password) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Password is required" 
+    const { visitorId, urlSlug } = credentials;
+    const { selectedEmote, unlockCondition, emoteDescription } = req.body;
+
+    if (!selectedEmote || !unlockCondition) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields"
       });
     }
-    
-    // Get the asset data
-    const droppedAsset = await DroppedAsset.get(assetId, urlSlug, { credentials });
 
-    // Initialize data object if needed
-    await initializeDroppedAssetDataObject(droppedAsset as IDroppedAsset);
-    
-    // Get the current data object
-    const dataObject = (droppedAsset as any).dataObject || {};
-    
-    // Reset stats when config changes
-    const unlockData = {
-      emoteId: "eyes",
-      emoteName: "Eyes",
-      emotePreviewUrl: "https://sdk-style.s3.amazonaws.com/icons/eyes.svg",
-      emoteDescription: emoteDescription || "Enter the correct password to unlock the Eyes expression!",
-      password: password.trim().toLowerCase(),
-      stats: {
-        attempts: 0,
-        successfulUnlocks: 0,
-        unlockUsers: []
-      }
-    };
-    
-    // Update the data object
-    await (droppedAsset as any).setDataObject({
-      ...dataObject,
-      unlockData
-    });
-    
-    return res.json({
-      unlockData: {
-        ...unlockData
-      },
-      success: true
-    });
-    
+    try {
+      // Create world instance
+      const world = World.create(urlSlug, { credentials });
+
+      // Initialize the unlock data with stats
+      const unlockData: EmoteUnlockConfig = {
+        emoteId: selectedEmote.id,
+        emoteName: selectedEmote.name,
+        emoteDescription: emoteDescription || "",
+        emotePreviewUrl: selectedEmote.previewUrl || `https://sdk-style.s3.amazonaws.com/icons/${selectedEmote.name.toLowerCase()}.svg`,
+        password: unlockCondition.value.toString().trim().toLowerCase(),
+        stats: {
+          attempts: 0,
+          successfulUnlocks: 0,
+          unlockUsers: []
+        }
+      };
+
+      // Set data object with a unique lockId to prevent race conditions
+      const lockId = `${urlSlug}-${new Date().getTime()}`;
+      await world.setDataObject({ unlockData }, { 
+        lock: { 
+          lockId,
+          releaseLock: true
+        }
+      });
+
+      return res.json({
+        success: true,
+        message: "Emote unlock configuration saved successfully"
+      });
+
+    } catch (apiError) {
+      console.error("Error saving emote unlock config:", apiError);
+      return res.status(500).json({
+        success: false,
+        message: "Unable to save emote unlock configuration"
+      });
+    }
   } catch (error) {
     return errorHandler({
       error,
       functionName: "handleEmoteUnlockConfig",
-      message: "Error configuring emote unlock",
+      message: "Error saving emote unlock configuration",
       req,
       res,
     });

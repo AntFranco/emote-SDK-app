@@ -5,7 +5,6 @@ import {
   handleGetVisitor,
   handleRemoveDroppedAssetsByUniqueName,
   handleGetWorldDetails,
-  handleUpdateWorldDataObject,
   handleGetEmoteUnlock,
   handleEmoteUnlockAttempt,
   handleEmoteUnlockConfig,
@@ -35,19 +34,18 @@ router.get("/system/health", (req, res) => {
   });
 });
 
-// Dropped Assets
+//dropped Assets
 router.post("/dropped-asset", handleDropAsset);
 router.get("/dropped-asset", handleGetDroppedAsset);
 router.post("/remove-dropped-assets", handleRemoveDroppedAssetsByUniqueName);
 
-// Visitor
+//visitor
 router.get("/visitor", handleGetVisitor);
 
-// World
+//world
 router.get("/world", handleGetWorldDetails);
-router.put("/world/data-object", handleUpdateWorldDataObject);
 
-// Emote Unlock
+//emote unlock
 router.get("/emote-unlock", handleGetEmoteUnlock);
 router.post("/emote-unlock/attempt", handleEmoteUnlockAttempt);
 router.post("/emote-unlock/config", handleEmoteUnlockConfig);
